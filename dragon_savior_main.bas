@@ -528,7 +528,7 @@ If level = 0 Then Restore level1
 If level = 1 Then Restore level2
 If level = 2 Then Restore level3
 If level = 3 Then GoTo ending
-On Error GoTo 10
+On Error GoTo 10         ' if it runs out of levels then restart?? the fuck is this
 For y = 0 To 49
     For x = 0 To 49
         Read g
