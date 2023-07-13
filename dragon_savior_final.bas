@@ -66,19 +66,29 @@ End Type
 ' game types ^
 
 Dim Shared map(50, 50) As Integer
-Dim dragon& ' as LONG
-Dim keyhit& ' as LONG
-Dim level As Integer
+Dim Shared dragon& ' as LONG
+Dim Shared keyhit& ' as LONG
+Dim Shared level As Integer
+
 level = 0
 Dim Shared sfx As sounds
 Dim Shared gfx As graphics
 Dim Shared graphics_cards As screenCards
-Dim game As gameType
+Dim Shared game As gameType
 
 Dim Shared enemies(50, 50) As enemy
 Dim Shared flames(50, 50) As flame
 Dim Shared projectiles(50, 50) As flame
 Dim Shared spikes(50, 50) As flame
+
+
+Dim Shared camx As Integer
+Dim Shared camy As Integer
+Dim Shared px As Integer
+Dim Shared py As Integer
+Dim Shared dx As Integer
+Dim Shared dy As Integer
+
 
 Call killAllEnemies
 Call loadAllSounds
@@ -100,8 +110,6 @@ Call loadAllGraphics
 
 'Print titleMusic&
 
-_SndVol sfx.titleMusic, .1
-_SndLoop sfx.titleMusic
 
 
 
@@ -117,6 +125,8 @@ Do
             Call runTutorial
 
     End Select
+
+
     ' run the title screen
 
 Loop
@@ -130,12 +140,312 @@ System
 
 
 Sub runGame
-    todo
+    Call restartGame
+    Call findPlayerOnMap
+    _SndVol sfx.gameplay_music, .1
+    _SndLoop sfx.gameplay_music 'disabled for now
+
+    Do
+        Call renderAndRunVisibleObjects
+        Call renderGui
+        Call keyHandle
+
+        PCopy 0, 1
+
+        Sleep
+
+    Loop
+
 End Sub
+
+Sub keyHandle
+    ' get key inpus and deal with them
+    dx = 0
+    dy = 0
+    keyhit& = _KeyHit
+    'k$ = InKey$
+    Select Case keyhit&
+        ' directional inputs
+        Case 100:
+            dx = 1
+
+        Case 119:
+            dy = -1
+        Case 115:
+            dy = 1
+        Case 97:
+            dx = -1
+    End Select
+    keyhit& = 0
+    _KeyClear
+
+
+End Sub
+
+Sub renderGui
+    Line (240, 0)-(240, 200), 15
+    Color _RGB(255, 255, 255)
+    Locate 1, 32: Print "DRAGON"
+    Locate 2, 32: Print "SAVIOR"
+    Color _RGB(100, 255, 100)
+    Locate 4, 32: Print "MONEY"
+    Locate 5, 33: Print "$" + Str$(game.money)
+
+    Color _RGB(255, 10, 100)
+    Locate 10, 32: Print "HEALTH"
+    Locate 11, 33: Print "" + Str$(game.hp)
+
+
+    Color _RGB(100, 100, 100)
+    Locate 13, 32: Print "LEVEL"
+    Locate 14, 33: Print "" + Str$(level + 1)
+    Line (0, 0)-(15 * 16, 11 * 16), _RGB(255, 255, 255), B
+End Sub
+
+
+
+
+Sub renderAndRunVisibleObjects ()
+    Cls
+    For y = 0 To 10
+        For x = 0 To 14
+            If (x + camx >= 0) And (x + camx < 50) And (y + camy >= 0) And (y + camy < 50) Then
+                enemy = 0
+                mapItem = map(x + camx, (y + camy))
+                enemy = enemies(x + camx, (y + camy)).alive
+                flame = flames(x + camx, y + camy).status
+                projectile = projectiles(x + camx, y + camy).status
+                spike = spikes(x + camx, y + camy).status
+
+                Select Case mapItem
+                    Case 1
+                        _PutImage (x * 16, y * 16), gfx.bricks
+                    Case 4
+                        _PutImage (x * 16, y * 16), gfx.dragon
+                    Case 2
+                        _PutImage (x * 16, y * 16), gfx.money
+                    Case 3
+                        _PutImage (x * 16, y * 16), gfx.door
+                    Case 7
+                        _PutImage (x * 16, y * 16), gfx.hero
+                    Case 9
+                        _PutImage (x * 16, y * 16), gfx.nextt
+                End Select
+
+                If enemy = 1 Then
+                    _PutImage (x * 16, y * 16), gfx.hero
+                    Call enemyRun
+                End If
+
+                If flame = 1 Then
+                    _PutImage (x * 16, y * 16), gfx.flame
+                    Call updateFlame
+                End If
+
+                If projectile = 1 Then
+                    _PutImage (x * 16, y * 16), gfx.proj
+                    Call projUpdate
+                End If
+
+
+                If spike = 1 Then
+                    _PutImage (x * 16, y * 16), gfx.spike
+                    Call spikeUpdate
+                End If
+
+
+            End If
+        Next x
+    Next y
+
+
+End Sub
+
+
+
+Sub spikeUpdate ()
+    sx = x + camx
+    sy = y + camy
+    xdir = spikes(sx, sy).xdir
+    ydir = spikes(sx, sy).ydir
+
+    If sx = px And sy = py Then
+        _SndVol sfx.getHurt, .4
+        _SndPlay sfx.getHurt
+        game.hp = game.hp - 10
+        spikes(sx, sy).status = 0
+        Return
+    End If
+    If spikes(sx, sy).ttl = 0 Then
+        'spikes(sx,sy)
+        If map(sx, sy) > 0 Then
+            xdir = xdir * -1
+            ydir = ydir * -1
+        End If
+
+        If spikes(sx + xdir, sy + ydir).status = 1 Then
+            xdir = xdir * -1
+            ydir = ydir * -1
+
+        End If
+
+        If spikes(sx + xdir, sy + ydir).status = 0 Then
+            spikes(sx + xdir, sy + ydir).status = 1
+            spikes(sx + xdir, sy + ydir).xdir = xdir
+            spikes(sx + xdir, sy + ydir).ydir = ydir
+            spikes(sx + xdir, sy + ydir).ttl = 10
+            spikes(sx, sy).status = 0
+        End If
+    Else
+        spikes(sx, sy).ttl = spikes(sx, sy).ttl - 1
+    End If
+
+End Sub
+
+Sub projUpdate ()
+    zx = x + camx
+    zy = y + camy
+    xdir = projectiles(zx, zy).xdir
+    ydir = projectiles(zx, zy).ydir
+
+
+    If px = zx And py = zy Then
+        _SndVol sfx.getHurt, .4
+        _SndPlay sfx.getHurt
+
+        game.hp = game.hp - 1
+        projectiles(zx, zy).status = 0
+
+    End If
+    If map(zx, zy) = 1 Then
+        projectiles(zx, zy).status = 0
+        Return
+    End If
+
+    If projectiles(zx, zy).ttl = 0 Then
+        projectiles(zx + xdir, zy + ydir).status = 1
+        projectiles(zx + xdir, zy + ydir).xdir = xdir
+        projectiles(zx + xdir, zy + ydir).ydir = ydir
+        projectiles(zx + xdir, zy + ydir).ttl = 7
+        projectiles(zx + xdir, zy + ydir).power = projectiles(zx + xdir, zy + ydir).power - 1
+        projectiles(zx, zy).status = 0
+        projectiles(zx, zy).power = 0
+        If projectiles(zx + xdir, zy + ydir).power = 0 Then
+            projectiles(zx + xdir, zy + ydir).status = 0
+        End If
+    Else
+        projectiles(zx, zy).ttl = projectiles(zx, zy).ttl - 1
+    End If
+
+End Sub
+
+Sub updateFlame ()
+    fx = x + camx
+    fy = y + camy
+    xdir = flames(fx, fy).xdir
+    ydir = flames(fx, fy).ydir
+
+    If map(fx, fy) = 1 Then
+        flames(fx, fy).status = 0
+        Return
+    End If
+
+
+    If flames(fx, fy).ttl = 0 Then
+
+        flames(fx + xdir, fy + ydir).status = 1
+        flames(fx + xdir, fy + ydir).xdir = xdir
+        flames(fx + xdir, fy + ydir).ydir = ydir
+        flames(fx + xdir, fy + ydir).ttl = 5
+        flames(fx + xdir, fy + ydir).power = flames(fx, fy).power - 1
+        flames(fx, fy).status = 0
+        flames(fx, fy).power = 0
+        If flames(fx + xdir, fy + ydir).power = 0 Then
+            flames(fx + xdir, fy + ydir).status = 0
+        End If
+    Else
+        flames(fx, fy).ttl = flames(fx, fy).ttl - 1
+    End If
+
+End Sub
+
+
+
+Sub enemyRun
+    ex = x + camx
+    ey = y + camy
+
+
+    If px = ex And py = ey Then
+        _SndVol sfx.getHurt, .4
+        _SndPlay sfx.getHurt
+        game.hp = game.hp - 2
+        game.power = game.power + 1
+        enemies(ex, ey).alive = 0
+    End If
+
+
+
+    dx = Int(Rnd * 3) - 1
+    dy = 0
+    If dx = 0 Then
+        dy = Int(Rnd * 3) - 1
+    End If
+
+    If flames(ex, ey).status = 1 Then
+        _SndVol sfx.enemydeath, 0.3
+        _SndPlay sfx.enemydeath
+        enemies(ex, ey).alive = 0
+        enemies(ex, ey).ttl = 0
+        flames(ex, ey).status = 0
+        If Int(Rnd * 4) = 2 Then
+            map(ex, ey) = 2
+        End If
+        Return
+    End If
+
+    If enemies(ex, ey).ttl = 0 Then
+        If map(ex + dx, ey + dy) = 0 And enemies(ex + dx, ey + dy).alive = 0 Then
+            enemies(ex + dx, ey + dy).alive = 1
+            enemies(ex + dx, ey + dy).ttl = Int(Rnd * 10) + 25
+            enemies(ex, ey).alive = 0
+            enemies(ex, ey).ttl = 0
+            If Int(Rnd * 10) = 1 Then
+                projectiles(ex, ey).status = 1
+                projectiles(ex, ey).xdir = dx * -1
+                projectiles(ex, ey).ydir = dy * -1
+                projectiles(ex, ey).ttl = 15
+                projectiles(ex, ey).power = 15
+            End If
+
+        End If
+    Else
+        enemies(ex, ey).ttl = enemies(ex, ey).ttl - 1
+    End If
+
+End Sub
+
 
 Sub runTutorial
     Call todo
 
+End Sub
+
+
+
+Sub findPlayerOnMap
+    px = -1
+    py = -1
+    For y = 0 To 49
+        For x = 0 To 49
+            If map(x, y) = 4 Then
+                camx = x - 7
+                camy = y - 5
+                px = x
+                py = y
+            End If
+        Next x
+    Next y
 End Sub
 
 Sub todo
@@ -145,7 +455,58 @@ Sub todo
     Sleep
 End Sub
 
+Sub restartGame
+    For y = 0 To 49
+        For x = 0 To 49
+            map(x, y) = 0
+            spikes(x, y).status = 0
+            enemies(x, y).alive = 0
+        Next x
+    Next y
+
+    game.money = 0
+    game.hp = 20
+    game.power = 10
+
+    x = 0
+    y = 0
+    camx = 10
+    camy = 4
+    If level = 0 Then Restore level1
+    If level = 1 Then Restore level2
+    If level = 2 Then Restore level3
+    ' If level = 3 Then GoTo ending
+    ' On Error GoTo 10 ' if it runs out of levels then restart?? the fuck is this
+    For y = 0 To 49
+        For x = 0 To 49
+            Read g
+
+            If g = 8 Then
+                spikes(x, y).status = 1
+                spikes(x, y).ttl = 10
+                xdir = Int(Rnd * 3) - 1
+                ydir = 0
+                If xdir = 0 Then ydir = (-1) ^ (Int(Rnd * 2))
+                spikes(x, y).xdir = xdir
+                spikes(x, y).ydir = ydir
+            ElseIf g = 7 Then
+                enemies(x, y).alive = 1
+                enemies(x, y).ttl = 10
+
+            Else
+                map(x, y) = g
+            End If
+
+        Next x
+
+
+    Next y
+End Sub
+
 Function runTitle
+    _SndVol sfx.titleMusic, .1
+    _SndLoop sfx.titleMusic
+
     Do
         escapeCondition = 0
         Do
@@ -169,6 +530,7 @@ Function runTitle
         End Select
 
     Loop Until escapeCondition <> 0
+    _SndStop sfx.titleMusic
     runTitle = escapeCondition
 End Function
 

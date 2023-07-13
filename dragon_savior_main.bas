@@ -108,10 +108,12 @@ GoTo title
 game:
 
 _SndStop titleMusic&
-GoTo restartgame
+
+
+GoTo restartgame ' this is actually stupid
 10
 
-
+' find the player on the map
 px = -1
 py = -1
 For y = 0 To 49
@@ -123,7 +125,7 @@ For y = 0 To 49
             py = y
         End If
     Next x
-Next y
+Next y ' end find the player on map
 
 
 
