@@ -1,9 +1,9 @@
 $Resize:Stretch
 Screen _NewImage(320, 200, 32), 0, 0, 1
-f = FreeFile
+f = FreeFile ' unused file access number, kinda weird way of doing it
 On Error GoTo 10
 
-Dim map(50, 50)
+Dim Shared map(50, 50)
 Dim dragon&
 
 Dim keyhit&
@@ -47,10 +47,11 @@ level = 0
 Dim sfx As sounds
 Dim game As gameType
 
-Dim enemies(50, 50) As enemy
-Dim flames(50, 50) As flame
-Dim projectiles(50, 50) As flame
-Dim spikes(50, 50) As flame
+
+Dim Shared enemies(50, 50) As enemy
+Dim Shared flames(50, 50) As flame
+Dim Shared projectiles(50, 50) As flame
+Dim Shared spikes(50, 50) As flame
 
 Cls
 Print "please wait"
@@ -171,6 +172,7 @@ Do
 
                 If f = 1 Then
                     _PutImage (x * 16, y * 16), flameSprite&
+                    '                    Call updateFlame
                     GoSub flameUpdate
                 End If
 
@@ -277,6 +279,7 @@ Do
     camy = py - 5
 Loop Until InKey$ = "q"
 System
+
 
 
 
@@ -528,7 +531,7 @@ If level = 0 Then Restore level1
 If level = 1 Then Restore level2
 If level = 2 Then Restore level3
 If level = 3 Then GoTo ending
-On Error GoTo 10         ' if it runs out of levels then restart?? the fuck is this
+On Error GoTo 10 ' if it runs out of levels then restart?? the fuck is this
 For y = 0 To 49
     For x = 0 To 49
         Read g
@@ -662,4 +665,37 @@ Loop
 
 
 System
+
+
+
+
+Sub updateFlame ()
+    fx = x + camx
+    fy = y + camy
+    xdir = flames(fx, fy).xdir
+    ydir = flames(fx, fy).ydir
+
+    If map(fx, fy) = 1 Then
+        flames(fx, fy).status = 0
+        Return
+    End If
+
+
+    If flames(fx, fy).ttl = 0 Then
+
+        flames(fx + xdir, fy + ydir).status = 1
+        flames(fx + xdir, fy + ydir).xdir = xdir
+        flames(fx + xdir, fy + ydir).ydir = ydir
+        flames(fx + xdir, fy + ydir).ttl = 5
+        flames(fx + xdir, fy + ydir).power = flames(fx, fy).power - 1
+        flames(fx, fy).status = 0
+        flames(fx, fy).power = 0
+        If flames(fx + xdir, fy + ydir).power = 0 Then
+            flames(fx + xdir, fy + ydir).status = 0
+        End If
+    Else
+        flames(fx, fy).ttl = flames(fx, fy).ttl - 1
+    End If
+
+End Sub
 
