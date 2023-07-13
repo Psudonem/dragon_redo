@@ -70,9 +70,10 @@ sfx.gameplay_music = _SndOpen("audio\dragon world.wav")
 sfx.flameball = _SndOpen("audio\flameBall.wav")
 sfx.getHurt = _SndOpen("audio\getHurt.wav")
 sfx.gameOver_music = _SndOpen("audio\funk.wav")
-' game over song will be funk.wav (famitracker)
+titleMusic& = _SndOpen("audio\dragon_savior_title.wav")
+endMusic& = _SndOpen("audio\talk the talk.wav")
 
-last& = _LoadImage("graphics\lastimg.png")
+
 
 dragon& = _LoadImage("graphics\dragon.png")
 bricks& = _LoadImage("graphics\bricks.png")
@@ -82,18 +83,16 @@ door& = _LoadImage("graphics\door.png")
 flameSprite& = _LoadImage("graphics\flameball.png")
 projSprite& = _LoadImage("graphics\poisonrock.png")
 spike& = _LoadImage("graphics\spike.png")
-gameOver& = _LoadImage("graphics\gameOver.png")
-
-endCard& = _LoadImage("graphics\endCard.png")
-
 nextt& = _LoadImage("graphics\next.png")
+
+gameOver& = _LoadImage("graphics\gameOver.png")
+endCard& = _LoadImage("graphics\endCard.png")
 logo& = _LoadImage("graphics\logo.bmp")
 tutorial& = _LoadImage("graphics\tutorial.png")
 lore& = _LoadImage("graphics\lore.png")
-titleMusic& = _SndOpen("audio\dragon_savior_title.wav")
+last& = _LoadImage("graphics\lastimg.png")
 
 
-endMusic& = _SndOpen("audio\talk the talk.wav")
 
 '$include:'world.bas'
 '$include:'world2.bas'
@@ -172,8 +171,8 @@ Do
 
                 If f = 1 Then
                     _PutImage (x * 16, y * 16), flameSprite&
-                    '                    Call updateFlame
-                    GoSub flameUpdate
+                    Call updateFlame
+                    'GoSub flameUpdate
                 End If
 
                 If p = 1 Then
