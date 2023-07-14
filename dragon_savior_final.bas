@@ -44,6 +44,7 @@ End Type
 
 
 Type gameType
+    state As Integer ' new element to control the game state
     money As Integer
     enemies As Integer
     power As Integer
@@ -113,24 +114,45 @@ Call loadAllGraphics
 
 
 
+game.state = 0
 
-' game loop
+
+' old game loop
+'Do
+
+
+'titleSelect = runTitle
+'Select Case titleSelect
+'    Case 1
+'Call runGame
+
+'    Case 2
+'Call runTutorial
+
+'End Select
+
+
+'' run the title screen
+
+'Loop
+
+
 Do
-    titleSelect = runTitle
-    Select Case titleSelect
+    Select Case game.state
+        Case 0
+            titleSelect = runTitle
+            ' render title screen
+            ' get input
+            ' process input
         Case 1
-            Call runGame
-
-        Case 2
-            Call runTutorial
+            ' render/update gameplay
+            ' get input
+            ' process input
 
     End Select
-
-
-    ' run the title screen
-
+    PCopy 0, 1
+    _Delay .01
 Loop
-
 
 
 Sleep
@@ -175,12 +197,79 @@ Sub keyHandle
             dy = 1
         Case 97:
             dx = -1
+            ' shooting inputs
+
+        Case 106: 'j
+            fdx = -1
+            fdy = 0
+            fireBallSpawn fdx, fdy
+        Case 108: 'l
+            fdx = 1
+            fdy = 0
+            fireBallSpawn fdx, fdy
+
+        Case 105: 'i
+            fdy = -1
+            fdx = 0
+            fireBallSpawn fdx, fdy
+        Case 107: 'k
+            fdy = 1
+            fdx = 0
+            fireBallSpawn fdx, fdy
+
     End Select
     keyhit& = 0
     _KeyClear
 
+    Select Case map(px + dx, py + dy)
+        Case 9
+            level = level + 1
+            Call restartGame
+        Case 0
+            Call marchForth
+        Case 2
+            map(px + dx, py + dy) = 0
+            game.money = game.money + 1
+            _SndVol sfx.money, 0.3
+            _SndPlay sfx.money
+            Call marchForth
+
+        Case 3
+            map(px + dx, py + dy) = 0
+            _SndVol sfx.door, .2
+            _SndPlay sfx.door
+            Call marchForth
+
+
+    End Select
+
+    camx = px - 7
+    camy = py - 5
+
 
 End Sub
+
+
+Sub marchForth
+    map(px, py) = 0
+    px = px + dx
+    py = py + dy
+    map(px, py) = 4
+
+
+End Sub
+
+
+
+Sub fireBallSpawn (fdx, fdy)
+    flames(px + fdx, py + fdy).status = 1
+    flames(px + fdx, py + fdy).xdir = fdx
+    flames(px + fdx, py + fdy).ydir = fdy
+    flames(px + fdx, py + fdy).power = 5
+    _SndVol sfx.flameball, .3
+    _SndPlay sfx.flameball
+End Sub
+
 
 Sub renderGui
     Line (240, 0)-(240, 200), 15
@@ -510,14 +599,7 @@ Function runTitle
     Do
         escapeCondition = 0
         Do
-            Cls
-            _PutImage (0, 0), graphics_cards.logo&
-            Print
-            Print " PUSH P TO PLAY!"
-            Print " PUSH T FOR TUTORIAL!"
-            Locate 19, 25: Print "K. JASEY"
-            Locate 20, 25: Print "2022"
-            PCopy 0, 1
+            Call renderTitle
             _Delay .1
 
             k$ = InKey$
@@ -533,6 +615,19 @@ Function runTitle
     _SndStop sfx.titleMusic
     runTitle = escapeCondition
 End Function
+
+Sub renderTitle ()
+    Cls
+    _PutImage (0, 0), graphics_cards.logo&
+    Print
+    Print " PUSH P TO PLAY!"
+    Print " PUSH T FOR TUTORIAL!"
+    Locate 19, 25: Print "K. JASEY"
+    Locate 20, 25: Print "2022"
+    PCopy 0, 1
+
+
+End Sub
 
 Sub loadAllGraphics
     gfx.dragon = _LoadImage("graphics\dragon.png")
