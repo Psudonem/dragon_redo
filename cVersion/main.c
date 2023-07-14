@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <inttypes.h>
 #include <SDL2/SDL_ttf.h>
+#include <string.h>
 // Normally SDL2 will redefine the main entry point of the program for Windows applications
 // this doesn't seem to play nice with TCC, so we just undefine the redefinition
 #ifdef __TINYC__
@@ -39,13 +40,20 @@ struct sdlPointers{
 	SDL_Window *window;
 	SDL_Renderer *renderer;
 	TTF_Font* Sans;
-	
+
+	SDL_Surface* titleSurface; 
+	SDL_Texture* titleTexture;
+	SDL_Rect titleRect;
 };
+struct sdlColors{
+	SDL_Color white;
+};
+
 
 int map[50][50];
 
 struct gameType game;
-
+struct sdlColors colors;
 struct sdlPointers sdlContainer;
 
 struct enemy enemies[50][50];
@@ -62,6 +70,7 @@ void kill_all_enemies();
 void load_all_sounds();
 void load_all_graphics();
 void gameLoop();
+void keyInputTitle(const char *inVal);
 int randInt(int rmin, int rmax);
 
 // Get a random number from 0 to 255
@@ -70,8 +79,8 @@ int randInt(int rmin, int rmax) {
 }
 
 // Window dimensions
-static const int width = 800;
-static const int height = 600;
+static const int width = 832;
+static const int height = 520;
 
 const int SCREEN_FPS = 60;
 
@@ -87,20 +96,11 @@ int main(){
     sdlContainer.renderer = SDL_CreateRenderer(sdlContainer.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);    
 	
 
-	sdlContainer.Sans = TTF_OpenFont("arial.ttf", 24);
-	SDL_Color White = {255, 255, 255};
-
-	SDL_Surface* surfaceMessage = TTF_RenderText_Solid(sdlContainer.Sans, "DRAGON SAVIOR", White);
-	SDL_Texture* Message = SDL_CreateTextureFromSurface(sdlContainer.renderer, surfaceMessage);
-
-	SDL_Rect Message_rect; //create a rect
-Message_rect.x = 100;  //controls the rect's x coordinate 
-Message_rect.y = 100; // controls the rect's y coordinte
-Message_rect.w = 100; // controls the width of the rect
-Message_rect.h = 100; // controls the height of the rect
+	//SDL_Rect titleRect; //create a rect
+	
 
 
-	SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 100, 0, 255);
+	SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
 
 	kill_all_enemies();
 	load_all_sounds();
@@ -117,6 +117,14 @@ Message_rect.h = 100; // controls the height of the rect
     		if(event.type == SDL_QUIT) {
                 running = false;
             }
+            if (event.type == SDL_KEYDOWN){
+            	switch(game.state){
+            		case 0:
+            			keyInputTitle(SDL_GetKeyName(event.key.keysym.sym));
+            	}
+            	printf("button pressed: %s\n",SDL_GetKeyName(event.key.keysym.sym));
+            }
+
     	}    
 
     	Uint64 start = SDL_GetPerformanceCounter();	
@@ -124,7 +132,7 @@ Message_rect.h = 100; // controls the height of the rect
     	
     	SDL_RenderClear(sdlContainer.renderer);
 		gameLoop(sdlContainer.renderer);
-		SDL_RenderCopy(sdlContainer.renderer, Message, NULL, NULL);//, NULL, &Message_rect);
+		
 
     	SDL_RenderPresent(sdlContainer.renderer);
     	Uint64 end = SDL_GetPerformanceCounter();
@@ -134,8 +142,8 @@ Message_rect.h = 100; // controls the height of the rect
     }
 
 
-    SDL_DestroyTexture(Message);
-	SDL_FreeSurface(surfaceMessage);
+    SDL_DestroyTexture(sdlContainer.titleTexture);
+	SDL_FreeSurface(sdlContainer.titleSurface);
 
 
     SDL_DestroyRenderer(sdlContainer.renderer);
@@ -152,19 +160,44 @@ Message_rect.h = 100; // controls the height of the rect
 	return 0;
 }
 
+
 void renderTitle(){
-	//SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
+	SDL_RenderCopy(sdlContainer.renderer, sdlContainer.titleTexture, NULL, &sdlContainer.titleRect);//, NULL, &Message_rect);
 }
-void runTitle(){
-	renderTitle();
-	//renderTitle
-	//getInputAndHandleState_Title
+void keyInputTitle(const char *inVal){
+
+	printf("button for title inputted %s\n",inVal);
+	if(strcmp(inVal, "P")==0){// if P is pressed
+		game.state=1;
+	}
 }
 
+
+void runTitle(){
+	renderTitle();
+	
+}
+
+void setupGame(){
+
+}
+
+
+void gamePlay(){
+
+}
 void gameLoop(){
 
 	/*
-		game state function structure
+		CURRENT: game state function structure
+		main loop:
+			get input
+			handle input
+
+			handle in-engine events
+			draw
+
+		OLD: game state function structure
 			- render screen
 				- sometimes it is perferrable to handle events in this stage
 			- get input (if needed)
@@ -172,15 +205,17 @@ void gameLoop(){
 	*/
 	switch(game.state){
 		case 0:
-			printf("title\n\n");
+			//printf("title\n\n");
 			runTitle();
 			break;
 		case 1:
 			printf("setting up game\n\n");
+			setupGame();
 			game.state++;
 			break;
 		case 2:
 			printf("game play\n\n");
+			gamePlay();
 			break;
 		case 3:
 			printf("switching levels....\n\n");
@@ -212,6 +247,31 @@ void load_all_sounds(){
 }
 void load_all_graphics(){
 	printf("this is where we load all graphics\n");
+
+
+	// Load and crate the title screen font
+	sdlContainer.Sans = TTF_OpenFont("arial.ttf", 24);
+	colors.white.r=255;
+	colors.white.g=255;
+	colors.white.b=255;
+	colors.white.a=0;
+
+	sdlContainer.titleSurface = TTF_RenderText_Solid(sdlContainer.Sans, "DRAGON SAVIOR TITLE. P = Play. T = Tutorial", colors.white);
+	sdlContainer.titleTexture = SDL_CreateTextureFromSurface(sdlContainer.renderer, sdlContainer.titleSurface);
+
+
+
+	int texW = 0;
+	int texH = 0;
+	SDL_QueryTexture(sdlContainer.titleTexture, NULL, NULL, &texW, &texH);
+	//sdlContainer.titleRect= { 0, 0, texW, texH };
+	sdlContainer.titleRect.x = 0;  //controls the rect's x coordinate 
+	sdlContainer.titleRect.y = 0; // controls the rect's y coordinte
+	sdlContainer.titleRect.w = texW; // controls the width of the rect
+	sdlContainer.titleRect.h = texH; // controls the height of the rect
+
+
+
 }
 void kill_all_enemies(){
     for(x = 0;x<=49;x++){
