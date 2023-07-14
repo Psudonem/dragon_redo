@@ -35,11 +35,18 @@ struct gameType{
 	int level;
 };
 
-//struct enemy E;
+struct sdlPointers{
+	SDL_Window *window;
+	SDL_Renderer *renderer;
+	TTF_Font* Sans;
+	
+};
 
 int map[50][50];
 
 struct gameType game;
+
+struct sdlPointers sdlContainer;
 
 struct enemy enemies[50][50];
 struct flame flames[50][50]; 
@@ -68,19 +75,32 @@ static const int height = 600;
 
 const int SCREEN_FPS = 60;
 
-
 float floor();
 
 
 int main(){
 	// this is the C port of the dragon savior engine
+	SDL_Init(SDL_INIT_VIDEO);
+	TTF_Init();
 
-	TTF_Font* Sans = TTF_OpenFont("Sans.ttf", 24);
+	sdlContainer.window = SDL_CreateWindow("Dragon Savior", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL);
+    sdlContainer.renderer = SDL_CreateRenderer(sdlContainer.window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);    
+	
 
-	SDL_Window *window = SDL_CreateWindow("Hello, SDL2", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, width, height, SDL_WINDOW_OPENGL);
-    SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);    
-	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+	sdlContainer.Sans = TTF_OpenFont("arial.ttf", 24);
+	SDL_Color White = {255, 255, 255};
 
+	SDL_Surface* surfaceMessage = TTF_RenderText_Solid(sdlContainer.Sans, "DRAGON SAVIOR", White);
+	SDL_Texture* Message = SDL_CreateTextureFromSurface(sdlContainer.renderer, surfaceMessage);
+
+	SDL_Rect Message_rect; //create a rect
+Message_rect.x = 100;  //controls the rect's x coordinate 
+Message_rect.y = 100; // controls the rect's y coordinte
+Message_rect.w = 100; // controls the width of the rect
+Message_rect.h = 100; // controls the height of the rect
+
+
+	SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 100, 0, 255);
 
 	kill_all_enemies();
 	load_all_sounds();
@@ -100,16 +120,30 @@ int main(){
     	}    
 
     	Uint64 start = SDL_GetPerformanceCounter();	
-    	gameLoop();
-    	SDL_RenderClear(renderer);
-    	SDL_RenderPresent(renderer);
+    	
+    	
+    	SDL_RenderClear(sdlContainer.renderer);
+		gameLoop(sdlContainer.renderer);
+		SDL_RenderCopy(sdlContainer.renderer, Message, NULL, NULL);//, NULL, &Message_rect);
+
+    	SDL_RenderPresent(sdlContainer.renderer);
     	Uint64 end = SDL_GetPerformanceCounter();
 
     	float elapsedMS = (end - start) / (float)SDL_GetPerformanceFrequency() * 1000.0f;
     	SDL_Delay(floor(16.666f - elapsedMS));
     }
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
+
+
+    SDL_DestroyTexture(Message);
+	SDL_FreeSurface(surfaceMessage);
+
+
+    SDL_DestroyRenderer(sdlContainer.renderer);
+    SDL_DestroyWindow(sdlContainer.window);
+
+
+    TTF_CloseFont(sdlContainer.Sans);
+    TTF_Quit();
     SDL_Quit();
 
 
@@ -119,7 +153,7 @@ int main(){
 }
 
 void renderTitle(){
-
+	//SDL_RenderCopy(renderer, Message, NULL, &Message_rect);
 }
 void runTitle(){
 	renderTitle();
