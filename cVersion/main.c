@@ -64,6 +64,7 @@ int randInt(int rmin, int rmax) {
 static const int width = 800;
 static const int height = 600;
 
+const int SCREEN_FPS = 60;
 
 
 
@@ -115,7 +116,7 @@ void gameLoop(){
 			- render screen
 			- handle events (if needed)
 			- get input (if needed)
-			
+
 	*/
 	switch(game.state){
 		case 0:
