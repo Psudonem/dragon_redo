@@ -1,2 +1,3 @@
 @echo off
-C:\Users\Kai\Documents\program\tcc\tcc main.c -o dragon.exe
+C:\Users\Kai\Documents\program\tcc\tcc main.c -lSDL2 -o dragon.exe 
+rem dragon
