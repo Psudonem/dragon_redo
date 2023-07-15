@@ -169,18 +169,16 @@ void keyInputTitle(const char *inVal){
 	printf("button for title inputted %s\n",inVal);
 	if(strcmp(inVal, "P")==0){// if P is pressed
 		game.state=1;
+	}else if(strcmp(inVal, "T")==0){
+		game.state=9;
 	}
 }
 
 
 void runTitle(){
-	renderTitle();
-	
-}
+	renderTitle();}
 
-void setupGame(){
-
-}
+void setupGame(){}
 
 
 void gamePlay(){
@@ -238,6 +236,10 @@ void gameLoop(){
 		case 8:
 			printf("pause menu\n\n");
 			game.state = 1;
+			break;
+		case 9:
+			printf("displaying tutorial slide\n\n");
+			
 			break;
 	}
 }
