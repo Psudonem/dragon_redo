@@ -71,6 +71,7 @@ void load_all_sounds();
 void load_all_graphics();
 void gameLoop();
 void keyInputTitle(const char *inVal);
+void keyInputGamePlay(const char *inVal);
 int randInt(int rmin, int rmax);
 
 // Get a random number from 0 to 255
@@ -117,10 +118,16 @@ int main(){
     		if(event.type == SDL_QUIT) {
                 running = false;
             }
+			
+			
+			gameLoop();
             if (event.type == SDL_KEYDOWN){
             	switch(game.state){
             		case 0:
             			keyInputTitle(SDL_GetKeyName(event.key.keysym.sym));
+					case 2:
+						keyInputGamePlay(SDL_GetKeyName(event.key.keysym.sym));
+						
             	}
             	printf("button pressed: %s\n",SDL_GetKeyName(event.key.keysym.sym));
             }
@@ -163,6 +170,7 @@ int main(){
 
 void renderTitle(){
 	SDL_RenderCopy(sdlContainer.renderer, sdlContainer.titleTexture, NULL, &sdlContainer.titleRect);//, NULL, &Message_rect);
+	
 }
 void keyInputTitle(const char *inVal){
 
@@ -170,7 +178,23 @@ void keyInputTitle(const char *inVal){
 	if(strcmp(inVal, "P")==0){// if P is pressed
 		game.state=1;
 	}else if(strcmp(inVal, "T")==0){
-		game.state=9;
+		game.state=9;}
+}
+
+void keyInputGamePlay(const char *inVal){
+
+	//printf("button for title inputted %s\n",inVal);
+	if(strcmp(inVal, "W")==0){// if W is pressed
+		py-=32;
+	}
+	if(strcmp(inVal, "S")==0){// if S is pressed
+		py+=32;
+	}
+	if(strcmp(inVal, "D")==0){// if D is pressed
+		px+=32;
+	}
+	if(strcmp(inVal, "A")==0){// if A is pressed
+		px-=32;
 	}
 }
 
@@ -178,12 +202,25 @@ void keyInputTitle(const char *inVal){
 void runTitle(){
 	renderTitle();}
 
-void setupGame(){}
+void setupGame(){
+	px = 0;
+	py = 0;
+	
+}
 
 
 void gamePlay(){
-
+	//printf("X: %d\nY: %d\n",px,py);
+	
+	SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 200, 0, 255);
+	
+	SDL_Rect location = {px,py,32,32}; 
+	SDL_RenderDrawRect(sdlContainer.renderer, &location);
+	SDL_RenderDrawPoint(sdlContainer.renderer, px, py);
+	SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
+	
 }
+
 void gameLoop(){
 
 	/*
@@ -245,8 +282,7 @@ void gameLoop(){
 }
 
 void load_all_sounds(){
-	printf("this is where we load all sounds\n");
-}
+	printf("this is where we load all sounds\n");}
 void load_all_graphics(){
 	printf("this is where we load all graphics\n");
 
@@ -271,14 +307,8 @@ void load_all_graphics(){
 	sdlContainer.titleRect.y = 0; // controls the rect's y coordinte
 	sdlContainer.titleRect.w = texW; // controls the width of the rect
 	sdlContainer.titleRect.h = texH; // controls the height of the rect
-
-
-
 }
 void kill_all_enemies(){
     for(x = 0;x<=49;x++){
     	for(y = 0;y<=49;y++){
-			enemies[x][y].alive = 0;
-    	}
-    }
-}
+			enemies[x][y].alive = 0;}}}
