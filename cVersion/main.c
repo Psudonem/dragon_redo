@@ -7,7 +7,10 @@
 #include <SDL2/SDL_ttf.h>
 #include <string.h>
 
+
 #include "screen1.c";
+
+#include "easyG.c";
 // Normally SDL2 will redefine the main entry point of the program for Windows applications
 // this doesn't seem to play nice with TCC, so we just undefine the redefinition
 #ifdef __TINYC__
@@ -39,15 +42,7 @@ struct gameType{
 	int level;
 };
 
-struct sdlPointers{
-	SDL_Window *window;
-	SDL_Renderer *renderer;
-	TTF_Font* Sans;
 
-	SDL_Surface* titleSurface; 
-	SDL_Texture* titleTexture;
-	SDL_Rect titleRect;
-};
 struct sdlColors{
 	SDL_Color white;
 };
@@ -65,8 +60,6 @@ struct enemy enemies[50][50];
 struct flame flames[50][50]; 
 struct flame projectiles[50][50];
 struct flame flamespikes[50][50] ;
-
-
 int camx,camy, px, py, dx, dy;/**/
 
 int x,y;
@@ -264,6 +257,10 @@ void keyInputGamePlay(const char *inVal){
 		dx-=1;
 	}
 	
+	if(map[(py+dy)*50 + (px+dx)]==3){
+		map[(py+dy)*50 + (px+dx)]=0;
+	}
+	
 	if(map[(py+dy)*50 + (px+dx)]==0){
 		map[py*50 + px]=0;
 		px+=dx;
@@ -396,6 +393,10 @@ void renderMap(){
 			}
 		}
 	}
+	
+	SDL_SetRenderDrawColor(sdlContainer.renderer, 100, 255, 255, 255);
+	drawrect(0,0,480,352);
+	SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
 }
 void gamePlay(){
 	printf("X: %d\nY: %d\n",px,py);
