@@ -55,6 +55,8 @@ struct sdlColors{
 
 //int map[50][50];
 
+struct enemy enemies[50][50];
+
 struct gameType game;
 struct sdlColors colors;
 struct sdlPointers sdlContainer;
@@ -73,6 +75,7 @@ void kill_all_enemies();
 void load_all_sounds();
 void load_all_graphics();
 void gameLoop();
+void enemyRun(int x, int y);
 void keyInputTitle(const char *inVal);
 void keyInputGamePlay(const char *inVal);
 int randInt(int rmin, int rmax);
@@ -80,6 +83,7 @@ int randInt(int rmin, int rmax);
 void renderMap();
 
 void findPlayer();// find the player on the map;
+void loadEnemies();// find and load all enemies;
 
 // Get a random number from 0 to 255
 int randInt(int rmin, int rmax) {
@@ -95,8 +99,13 @@ const int SCREEN_FPS = 60;
 float floor();
 SDL_Texture* bricTex;
 SDL_Texture* dragTex;
+SDL_Texture* moneyTex;
+SDL_Texture* doorTex;
+SDL_Texture* heroTex;
+SDL_Texture* nexTex;
 
 int main(){
+	
 	// this is the C port of the dragon savior engine
 	SDL_Init(SDL_INIT_VIDEO);
 	TTF_Init();
@@ -107,21 +116,48 @@ int main(){
 	//SDL_Surface* bricksIMG = SDL_LoadIMG("bricks.png");
 
 
-	// load bricks sprite
 	SDL_Surface* optimizedSurface = NULL;
+	// load bricks sprite
+	
 	SDL_Surface* loadedSurface = IMG_Load("bricks.png");
 		
 	bricTex = SDL_CreateTextureFromSurface(sdlContainer.renderer, loadedSurface);
 	//--------------
 
 	// load dragon sprite
-	optimizedSurface = NULL;
 	loadedSurface = IMG_Load("dragon.png");
 	dragTex = SDL_CreateTextureFromSurface(sdlContainer.renderer, loadedSurface);
 	//--------------
+	
+	// load money sprite
+	loadedSurface = IMG_Load("money.png");
+	moneyTex = SDL_CreateTextureFromSurface(sdlContainer.renderer, loadedSurface);
+	//--------------
+	
+	// load door sprite
+	loadedSurface = IMG_Load("door.png");
+	doorTex = SDL_CreateTextureFromSurface(sdlContainer.renderer, loadedSurface);
+	//--------------
+	
+	// load hero sprite
+	loadedSurface = IMG_Load("hero.png");
+	heroTex = SDL_CreateTextureFromSurface(sdlContainer.renderer, loadedSurface);
+	//--------------
+	// load next sprite
+	loadedSurface = IMG_Load("next.png");
+	nexTex = SDL_CreateTextureFromSurface(sdlContainer.renderer, loadedSurface);
+	//--------------
 
 
-
+	// wipe enemy array
+	for(int y = 0;y<50;y++){
+		for(int x=0;x<50;x++){
+			enemies[x][y].alive = 0;
+			enemies[x][y].ttl = 0;
+			
+		}
+	}
+	//---------------
 
 
 	//SDL_Rect titleRect; //create a rect
@@ -157,6 +193,8 @@ int main(){
 						
             	}
             	printf("button pressed: %s\n",SDL_GetKeyName(event.key.keysym.sym));
+				if(event.key.keysym.sym==13){
+					running = false;}
             }
 
     	}    
@@ -246,8 +284,44 @@ void setupGame(){
 	px = 0;
 	py = 0;
 	findPlayer();
+	loadEnemies();
 }
 
+
+void enemyRun(int x, int y){
+	int ex = x;
+	int ey = y;
+	int dx =  randInt(-1,2);//(rand() % 3)-1;
+	int dy = 0;
+	if(dx==0){
+		dy = randInt(-1,2);//(rand() % 3)-1;
+	}
+	
+	printf("\n ~~~ %d\n",enemies[ex][ey].ttl);
+	if(enemies[ex][ey].ttl==0){
+		if(map[(ey+dy)*50 + (ex+dx)] == 0 && enemies[ex+dx][ey+dy].alive==0){
+			enemies[ex+dx][ey+dy].alive = 1;
+			enemies[ex+dx][ey+dy].ttl = (rand() % 10)+25;
+			enemies[ex][ey].alive=0;
+			enemies[ex][ey].ttl=0;
+		}
+	}else{
+		enemies[ex][ey].ttl--;
+	}
+}
+void loadEnemies(){
+	int m;
+	for(int y= 0; y<50;y++){
+		for(int x=0;x<50;x++){
+			m = (int)(map[y*50+x]);
+			if(m==7){
+				enemies[x][y].alive = 1;
+				enemies[x][y].ttl = 10;
+				map[y*50+x]=0;
+			}
+		}
+	}
+}
 void findPlayer(){
 	int m;
 	for(int y= 0; y<50;y++){
@@ -265,27 +339,59 @@ void findPlayer(){
 
 
 void renderMap(){
+	int m;
+	int e;
 	for(int y=0;y<11;y++){
 		for(int x=0;x<15;x++){
 			if((x + camx >= 0) && (x + camx < 50) && (y + camy >= 0) && (y + camy < 50)){
-				int m;
+				m=0;e=0;
 				m=map[(y+camy)*50 + (x+camx)];
+				e =  enemies[x + camx][(y + camy)].alive;
+				
+					SDL_Rect tempRec ={x*32,y*32,32,32};
 				 switch(m){
 					case 1:// brick
 						SDL_SetRenderDrawColor(sdlContainer.renderer, 255, 0, 0, 255);
-						SDL_Rect bric = {x*32,y*32,32,32};
-						SDL_RenderCopy(sdlContainer.renderer, bricTex, NULL, &bric);
+						SDL_RenderCopy(sdlContainer.renderer, bricTex, NULL, &tempRec);
 						//SDL_RenderDrawRect(sdlContainer.renderer, &bric);
 						SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
 						break;
 					case 4://dragon
 						SDL_SetRenderDrawColor(sdlContainer.renderer, 100, 255, 0, 255);
-						SDL_Rect drag = {x*32,y*32,32,32};
-						SDL_RenderCopy(sdlContainer.renderer, dragTex, NULL, &drag);
-						//SDL_RenderDrawRect(sdlContainer.renderer, &drag);
+						SDL_RenderCopy(sdlContainer.renderer, dragTex, NULL, &tempRec);
+						SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
+						break;
+					case 2://money
+						SDL_SetRenderDrawColor(sdlContainer.renderer, 100, 255, 0, 255);
+						SDL_RenderCopy(sdlContainer.renderer, moneyTex, NULL, &tempRec);
+						SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
+						break;
+					case 3://door
+						SDL_SetRenderDrawColor(sdlContainer.renderer, 100, 255, 0, 255);
+						SDL_RenderCopy(sdlContainer.renderer, doorTex, NULL, &tempRec);
+						SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
+						break;
+					case 7://hero
+						SDL_SetRenderDrawColor(sdlContainer.renderer, 100, 255, 0, 255);
+						SDL_RenderCopy(sdlContainer.renderer, heroTex, NULL, &tempRec);
+						SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
+						break;
+					case 9://next
+						SDL_SetRenderDrawColor(sdlContainer.renderer, 100, 255, 0, 255);
+						SDL_RenderCopy(sdlContainer.renderer, nexTex, NULL, &tempRec);
 						SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
 						break;
 				 }
+				
+				if(e>0){
+					SDL_SetRenderDrawColor(sdlContainer.renderer, 100, 255, 0, 255);
+					SDL_RenderCopy(sdlContainer.renderer, heroTex, NULL, &tempRec);
+					SDL_SetRenderDrawColor(sdlContainer.renderer, 0, 0, 0, 255);
+					enemyRun(x+camx,y+camy);
+				}
+				
+				
+				
 				
 			}
 		}
